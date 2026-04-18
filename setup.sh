@@ -202,8 +202,8 @@ info "Datenbank-Verschlüsselung aktiv."
 step "Starte verbleibende Container..."
 docker compose -f docker-compose.prod.yml up -d
 
-step "Warte auf Backend (60s)..."
-for i in {60..1}; do
+step "Warte auf Backend (120s)..."
+for i in {120..1}; do
   echo -ne "  Noch ${i}s...  \r"
   sleep 1
 done
@@ -212,7 +212,7 @@ info "Backend bereit."
 
 step "Lege Admin-Benutzer an..."
 docker compose -f docker-compose.prod.yml exec -T backend \
-  node dist/scripts/create-admin.js 2>/dev/null || true
+  node dist/scripts/create-admin.js || true
 docker compose -f docker-compose.prod.yml exec -T backend \
   node dist/scripts/reset-admin-password.js Admin "$ADMIN_PASSWORD"
 info "Admin-Benutzer angelegt."
