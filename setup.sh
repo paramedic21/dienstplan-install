@@ -156,22 +156,49 @@ render .env.tpl > .env
 rm Caddyfile.tpl .env.tpl
 chmod 600 .env
 
-info "Datenbank-Verzeichnis vorbereitet."
-mkdir -p db
+mkdir -p db/encryption db/conf.d
 
 step "Lade Docker-Images (kann einige Minuten dauern)..."
 docker compose -f docker-compose.prod.yml pull
 
-step "Starte Container..."
-docker compose -f docker-compose.prod.yml up -d
+step "Starte Datenbank (Phase 1: Initialisierung)..."
+docker compose -f docker-compose.prod.yml up -d db
 
-step "Warte auf Datenbank..."
-for i in {1..30}; do
+step "Warte auf Datenbank-Initialisierung..."
+for i in {1..40}; do
   docker compose -f docker-compose.prod.yml exec -T db \
     healthcheck.sh --connect --innodb_initialized 2>/dev/null && break
-  sleep 3
+  sleep 5
 done
-info "Datenbank bereit."
+info "Datenbank initialisiert."
+
+step "Aktiviere Datenbank-Verschlüsselung..."
+mkdir -p db/encryption db/conf.d
+KEY=$(openssl rand -hex 32)
+echo "1;$KEY" > db/encryption/keys.txt
+chmod 600 db/encryption/keys.txt
+
+cat > db/conf.d/encryption.cnf <<'CNF'
+[mariadb]
+plugin_load_add = file_key_management
+file_key_management_filename = /etc/mysql/encryption/keys.txt
+innodb_encrypt_tables = ON
+innodb_encrypt_log = ON
+innodb_encryption_threads = 4
+CNF
+
+docker compose -f docker-compose.prod.yml restart db
+
+step "Warte auf Datenbank nach Neustart..."
+for i in {1..40}; do
+  docker compose -f docker-compose.prod.yml exec -T db \
+    healthcheck.sh --connect --innodb_initialized 2>/dev/null && break
+  sleep 5
+done
+info "Datenbank-Verschlüsselung aktiv."
+
+step "Starte verbleibende Container..."
+docker compose -f docker-compose.prod.yml up -d
 
 step "Warte auf Backend..."
 for i in {1..40}; do
