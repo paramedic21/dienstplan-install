@@ -50,7 +50,11 @@ step "Prüfe Systemvoraussetzungen..."
 grep -qE "(Ubuntu|Debian)" /etc/os-release 2>/dev/null \
   || fail "Nur Ubuntu 20+ oder Debian 11+ unterstützt."
 
-RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+if command -v free &>/dev/null; then
+  RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+else
+  RAM_MB=$(awk '/MemTotal:/{print int($2/1024)}' /proc/meminfo)
+fi
 [[ $RAM_MB -lt 1800 ]] && fail "Mindestens 2 GB RAM erforderlich (gefunden: ${RAM_MB} MB)."
 
 DISK_GB=$(df -BG / | awk 'NR==2{gsub("G",""); print $4}')
