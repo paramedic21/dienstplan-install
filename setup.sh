@@ -34,8 +34,10 @@ INSTALLED=false
 rollback() {
   if [[ "$INSTALLED" == "false" ]] && [[ -d "$INSTALL_DIR" ]]; then
     warn "Fehler aufgetreten — räume auf..."
-    echo -e "${YELLOW}── DB-Logs (letzte 30 Zeilen) ──${NC}"
-    docker compose -f "$INSTALL_DIR/docker-compose.prod.yml" logs --tail=30 db 2>/dev/null || true
+    echo -e "${YELLOW}── DB-Logs (letzte 20 Zeilen) ──${NC}"
+    docker compose -f "$INSTALL_DIR/docker-compose.prod.yml" logs --tail=20 db 2>/dev/null || true
+    echo -e "${YELLOW}── Backend-Logs (letzte 20 Zeilen) ──${NC}"
+    docker compose -f "$INSTALL_DIR/docker-compose.prod.yml" logs --tail=20 backend 2>/dev/null || true
     echo -e "${YELLOW}────────────────────────────────${NC}"
     docker compose -f "$INSTALL_DIR/docker-compose.prod.yml" down --volumes 2>/dev/null || true
     rm -rf "$INSTALL_DIR"
