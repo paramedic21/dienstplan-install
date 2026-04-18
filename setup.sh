@@ -165,11 +165,18 @@ step "Starte Datenbank (Phase 1: Initialisierung)..."
 docker compose -f docker-compose.prod.yml up -d db
 
 step "Warte auf Datenbank-Initialisierung..."
+db_ready=false
 for i in {1..40}; do
-  docker compose -f docker-compose.prod.yml exec -T db \
-    healthcheck.sh --connect --innodb_initialized 2>/dev/null && break
+  echo -n "  [${i}/40] Warte auf MariaDB..."
+  if docker compose -f docker-compose.prod.yml exec -T db \
+      healthcheck.sh --connect --innodb_initialized 2>/dev/null; then
+    db_ready=true
+    break
+  fi
+  echo " nicht bereit, warte 5s"
   sleep 5
 done
+[[ "$db_ready" == "true" ]] || fail "Datenbank hat sich nicht rechtzeitig gemeldet."
 info "Datenbank initialisiert."
 
 step "Aktiviere Datenbank-Verschlüsselung..."
@@ -190,22 +197,36 @@ CNF
 docker compose -f docker-compose.prod.yml restart db
 
 step "Warte auf Datenbank nach Neustart..."
+db_ready=false
 for i in {1..40}; do
-  docker compose -f docker-compose.prod.yml exec -T db \
-    healthcheck.sh --connect --innodb_initialized 2>/dev/null && break
+  echo -n "  [${i}/40] Warte auf MariaDB (encrypted)..."
+  if docker compose -f docker-compose.prod.yml exec -T db \
+      healthcheck.sh --connect --innodb_initialized 2>/dev/null; then
+    db_ready=true
+    break
+  fi
+  echo " nicht bereit, warte 5s"
   sleep 5
 done
+[[ "$db_ready" == "true" ]] || fail "Datenbank hat sich nach Encryption-Neustart nicht gemeldet."
 info "Datenbank-Verschlüsselung aktiv."
 
 step "Starte verbleibende Container..."
 docker compose -f docker-compose.prod.yml up -d
 
 step "Warte auf Backend..."
+backend_ready=false
 for i in {1..40}; do
-  docker compose -f docker-compose.prod.yml exec -T backend \
-    wget -q --spider http://localhost:4000/api/health 2>/dev/null && break
-  sleep 3
+  echo -n "  [${i}/40] Warte auf Backend..."
+  if docker compose -f docker-compose.prod.yml exec -T backend \
+      wget -q --spider http://localhost:4000/api/health 2>/dev/null; then
+    backend_ready=true
+    break
+  fi
+  echo " nicht bereit, warte 5s"
+  sleep 5
 done
+[[ "$backend_ready" == "true" ]] || fail "Backend hat sich nicht rechtzeitig gemeldet."
 info "Backend bereit."
 
 step "Lege Admin-Benutzer an..."
