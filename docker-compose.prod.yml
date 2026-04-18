@@ -57,8 +57,6 @@ services:
     env_file: .env
     volumes:
       - db_data:/var/lib/mysql
-      - ./db/encryption:/etc/mysql/encryption:ro
-      - ./db/conf.d:/etc/mysql/conf.d:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s

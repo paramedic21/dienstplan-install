@@ -156,22 +156,8 @@ render .env.tpl > .env
 rm Caddyfile.tpl .env.tpl
 chmod 600 .env
 
-step "Generiere Datenbank-Verschlüsselungsschlüssel..."
-mkdir -p db/encryption db/conf.d
-KEY=$(openssl rand -hex 32)
-echo "1;$KEY" > db/encryption/keys.txt
-chmod 600 db/encryption/keys.txt
-
-cat > db/conf.d/encryption.cnf <<'CNF'
-[mariadb]
-plugin_load_add = file_key_management
-file_key_management_filename = /etc/mysql/encryption/keys.txt
-innodb_encrypt_tables = ON
-innodb_encrypt_log = ON
-innodb_encryption_threads = 4
-CNF
-
-info "Encryption-Keys generiert."
+info "Datenbank-Verzeichnis vorbereitet."
+mkdir -p db
 
 step "Lade Docker-Images (kann einige Minuten dauern)..."
 docker compose -f docker-compose.prod.yml pull
