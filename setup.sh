@@ -169,7 +169,7 @@ db_ready=false
 for i in {1..40}; do
   echo -n "  [${i}/40] Warte auf MariaDB..."
   if docker compose -f docker-compose.prod.yml exec -T db \
-      healthcheck.sh --connect --innodb_initialized 2>/dev/null; then
+      bash -c 'mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" 2>/dev/null'; then
     db_ready=true
     break
   fi
@@ -201,7 +201,7 @@ db_ready=false
 for i in {1..40}; do
   echo -n "  [${i}/40] Warte auf MariaDB (encrypted)..."
   if docker compose -f docker-compose.prod.yml exec -T db \
-      healthcheck.sh --connect --innodb_initialized 2>/dev/null; then
+      bash -c 'mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" 2>/dev/null'; then
     db_ready=true
     break
   fi

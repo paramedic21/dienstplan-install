@@ -60,7 +60,7 @@ services:
       - ./db/encryption:/etc/mysql/encryption:ro
       - ./db/conf.d:/etc/mysql/conf.d:ro
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "--password=${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
