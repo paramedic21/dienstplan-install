@@ -34,6 +34,9 @@ INSTALLED=false
 rollback() {
   if [[ "$INSTALLED" == "false" ]] && [[ -d "$INSTALL_DIR" ]]; then
     warn "Fehler aufgetreten — räume auf..."
+    echo -e "${YELLOW}── DB-Logs (letzte 30 Zeilen) ──${NC}"
+    docker compose -f "$INSTALL_DIR/docker-compose.prod.yml" logs --tail=30 db 2>/dev/null || true
+    echo -e "${YELLOW}────────────────────────────────${NC}"
     docker compose -f "$INSTALL_DIR/docker-compose.prod.yml" down --volumes 2>/dev/null || true
     rm -rf "$INSTALL_DIR"
     warn "Aufgeräumt. Bitte Fehlerursache beheben und erneut versuchen."
@@ -155,21 +158,14 @@ chmod 600 .env
 
 step "Generiere Datenbank-Verschlüsselungsschlüssel..."
 mkdir -p db/encryption db/conf.d
-openssl rand -base64 32 > db/encryption/keyfile.password
 KEY=$(openssl rand -hex 32)
 echo "1;$KEY" > db/encryption/keys.txt
-openssl enc -aes-256-cbc -md sha1 \
-  -pass file:db/encryption/keyfile.password \
-  -in db/encryption/keys.txt \
-  -out db/encryption/keys.enc
-rm db/encryption/keys.txt
-chmod 600 db/encryption/keyfile.password db/encryption/keys.enc
+chmod 600 db/encryption/keys.txt
 
 cat > db/conf.d/encryption.cnf <<'CNF'
 [mariadb]
 plugin_load_add = file_key_management
-file_key_management_filename = /etc/mysql/encryption/keys.enc
-file_key_management_filekey = FILE:/etc/mysql/encryption/keyfile.password
+file_key_management_filename = /etc/mysql/encryption/keys.txt
 innodb_encrypt_tables = ON
 innodb_encrypt_log = ON
 innodb_encryption_threads = 4
