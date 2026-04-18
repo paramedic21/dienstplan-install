@@ -219,80 +219,6 @@ info "Admin-Benutzer angelegt."
 
 INSTALLED=true
 
-cat > update.sh <<'UPDATEEOF'
-#!/usr/bin/env bash
-set -euo pipefail
-cd /opt/dienstplan
-
-DRY_RUN="false"; BACKUP_FIRST="true"; ROLLBACK="false"
-for arg in "$@"; do
-  case "$arg" in
-    --dry-run)       DRY_RUN="true" ;;
-    --no-backup)     BACKUP_FIRST="false" ;;
-    --rollback)      ROLLBACK="true" ;;
-  esac
-done
-
-if [[ "$ROLLBACK" == "true" ]]; then
-  PREV=$(cat .previous-tag 2>/dev/null || echo "")
-  [[ -z "$PREV" ]] && echo "Kein vorheriges Image gespeichert." && exit 1
-  sed -i "s|:latest|:$PREV|g" docker-compose.prod.yml
-  docker compose -f docker-compose.prod.yml up -d
-  echo "✓ Rollback auf $PREV abgeschlossen."
-  exit 0
-fi
-
-if [[ "$BACKUP_FIRST" == "true" ]]; then
-  BACKUP="backup-$(date +%Y%m%d-%H%M%S).sql.gz"
-  echo "→ Erstelle Datenbank-Backup: $BACKUP"
-  docker compose -f docker-compose.prod.yml exec -T db \
-    sh -c 'mysqldump -u dienstplan -p"$MYSQL_PASSWORD" dienstplan' | gzip > "$BACKUP"
-  echo "✓ Backup gespeichert: $BACKUP"
-fi
-
-echo "→ Lade neue Images..."
-docker compose -f docker-compose.prod.yml pull
-
-if [[ "$DRY_RUN" == "true" ]]; then
-  echo "✓ Dry-run abgeschlossen — keine Änderungen vorgenommen."
-  exit 0
-fi
-
-echo "→ Starte Container neu..."
-docker compose -f docker-compose.prod.yml up -d
-echo "✓ Update abgeschlossen."
-UPDATEEOF
-chmod +x update.sh
-
-step "Richte automatisches Update (Systemd) ein..."
-cat > /etc/systemd/system/dienstplan-update.path <<'EOF'
-[Unit]
-Description=Dienstplan Update Trigger
-
-[Path]
-PathExists=/opt/dienstplan/.update-requested
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-cat > /etc/systemd/system/dienstplan-update.service <<'EOF'
-[Unit]
-Description=Dienstplan Auto-Update
-
-[Service]
-Type=oneshot
-WorkingDirectory=/opt/dienstplan
-ExecStart=/opt/dienstplan/update.sh --no-backup
-ExecStartPost=/bin/rm -f /opt/dienstplan/.update-requested
-StandardOutput=journal
-StandardError=journal
-EOF
-
-systemctl daemon-reload
-systemctl enable --now dienstplan-update.path
-info "Automatisches Update eingerichtet."
-
 echo ""
 echo "══════════════════════════════════════════════════"
 echo -e "${GREEN}  ✓ Installation abgeschlossen!${NC}"
@@ -305,7 +231,7 @@ echo ""
 echo "  Testphase: 7 Tage aktiv."
 echo "  Lizenz eintragen: Admin-Bereich → Lizenz"
 echo ""
-echo "  Update: cd ${INSTALL_DIR} && ./update.sh"
+echo "  Update: Admin-Bereich → System → Aktualisieren"
 echo ""
 warn "Passwort jetzt notieren — wird nicht gespeichert!"
 warn "DB-Keys sichern: ${INSTALL_DIR}/db/encryption/ (USB + Tresor)"

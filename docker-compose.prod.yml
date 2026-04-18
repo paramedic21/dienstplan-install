@@ -50,6 +50,27 @@ services:
       retries: 10
       start_period: 30s
 
+  updater:
+    image: docker:cli
+    container_name: dienstplan-updater
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/dienstplan:/opt/dienstplan
+    command: >
+      sh -c '
+        while true; do
+          if [ -f /opt/dienstplan/.update-requested ]; then
+            rm -f /opt/dienstplan/.update-requested;
+            echo "[updater] Update gestartet...";
+            docker compose -f /opt/dienstplan/docker-compose.prod.yml pull frontend backend;
+            docker compose -f /opt/dienstplan/docker-compose.prod.yml up -d --no-deps frontend backend;
+            echo "[updater] Update abgeschlossen.";
+          fi;
+          sleep 10;
+        done
+      '
+
   db:
     image: mariadb:10.11
     container_name: dienstplan-db
