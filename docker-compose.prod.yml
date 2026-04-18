@@ -39,8 +39,7 @@ services:
     volumes:
       - upload_data:/data/uploads
       - system_backup_data:/data/system-backups
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /opt/dienstplan:/opt/dienstplan:ro
+      - /opt/dienstplan:/opt/dienstplan
     depends_on:
       db:
         condition: service_healthy

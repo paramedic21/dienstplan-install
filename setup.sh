@@ -249,6 +249,35 @@ echo "✓ Update abgeschlossen."
 UPDATEEOF
 chmod +x update.sh
 
+step "Richte automatisches Update (Systemd) ein..."
+cat > /etc/systemd/system/dienstplan-update.path <<'EOF'
+[Unit]
+Description=Dienstplan Update Trigger
+
+[Path]
+PathExists=/opt/dienstplan/.update-requested
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat > /etc/systemd/system/dienstplan-update.service <<'EOF'
+[Unit]
+Description=Dienstplan Auto-Update
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/dienstplan
+ExecStart=/opt/dienstplan/update.sh --no-backup
+ExecStartPost=/bin/rm -f /opt/dienstplan/.update-requested
+StandardOutput=journal
+StandardError=journal
+EOF
+
+systemctl daemon-reload
+systemctl enable --now dienstplan-update.path
+info "Automatisches Update eingerichtet."
+
 echo ""
 echo "══════════════════════════════════════════════════"
 echo -e "${GREEN}  ✓ Installation abgeschlossen!${NC}"
