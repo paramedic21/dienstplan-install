@@ -131,7 +131,7 @@ cd "$INSTALL_DIR"
 
 curl -fsSL "$REPO_RAW/docker-compose.prod.yml" -o docker-compose.prod.yml
 curl -fsSL "$REPO_RAW/Caddyfile.tpl" -o Caddyfile.tpl
-curl -fsSL "$REPO_RAW/.env.tpl" -o .env.tpl
+curl -fsSL "$REPO_RAW/env.tpl" -o .env.tpl
 
 render() {
   sed \
