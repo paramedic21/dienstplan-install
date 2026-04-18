@@ -83,7 +83,7 @@ echo "════════════════════════�
 echo ""
 
 if [[ -z "$DOMAIN" ]]; then
-  read -rp "  Domain (z.B. plan.drk-musterstadt.de): " DOMAIN
+  read -rp "  Domain (z.B. plan.drk-musterstadt.de): " DOMAIN </dev/tty
 fi
 [[ -z "$DOMAIN" ]] && fail "Domain darf nicht leer sein."
 
@@ -92,7 +92,7 @@ RESOLVED_IP=$(dig +short "$DOMAIN" A 2>/dev/null | tail -1 || true)
 if [[ "$RESOLVED_IP" != "$SERVER_IP" ]]; then
   warn "DNS: $DOMAIN → $RESOLVED_IP, Server-IP: $SERVER_IP"
   if [[ "$YES_MODE" != "true" ]]; then
-    read -rp "  DNS stimmt noch nicht überein. Trotzdem fortfahren? [j/N]: " ans
+    read -rp "  DNS stimmt noch nicht überein. Trotzdem fortfahren? [j/N]: " ans </dev/tty
     [[ "${ans,,}" != "j" ]] && exit 0
   fi
 else
@@ -100,19 +100,19 @@ else
 fi
 
 if [[ -z "$EMAIL" ]]; then
-  read -rp "  E-Mail für Let's Encrypt (Zertifikat-Benachrichtigungen): " EMAIL
+  read -rp "  E-Mail für Let's Encrypt (Zertifikat-Benachrichtigungen): " EMAIL </dev/tty
 fi
 [[ -z "$EMAIL" ]] && fail "E-Mail darf nicht leer sein."
 
 if [[ -z "$SMTP_HOST" ]] && [[ "$YES_MODE" != "true" ]]; then
-  read -rp "  SMTP einrichten? (für Passwort-Reset-Mails) [j/N]: " setup_smtp
+  read -rp "  SMTP einrichten? (für Passwort-Reset-Mails) [j/N]: " setup_smtp </dev/tty
   if [[ "${setup_smtp,,}" == "j" ]]; then
-    read -rp "  SMTP-Host: " SMTP_HOST
-    read -rp "  SMTP-Port [587]: " smtp_port_in
+    read -rp "  SMTP-Host: " SMTP_HOST </dev/tty
+    read -rp "  SMTP-Port [587]: " smtp_port_in </dev/tty
     SMTP_PORT="${smtp_port_in:-587}"
-    read -rp "  SMTP-Benutzer: " SMTP_USER
-    read -rsp "  SMTP-Passwort: " SMTP_PASS; echo ""
-    read -rp "  Absender-Adresse: " SMTP_FROM
+    read -rp "  SMTP-Benutzer: " SMTP_USER </dev/tty
+    read -rsp "  SMTP-Passwort: " SMTP_PASS </dev/tty; echo ""
+    read -rp "  Absender-Adresse: " SMTP_FROM </dev/tty
   fi
 fi
 
