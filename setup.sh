@@ -176,7 +176,7 @@ step "Aktiviere Datenbank-Verschlüsselung..."
 mkdir -p db/encryption db/conf.d
 KEY=$(openssl rand -hex 32)
 echo "1;$KEY" > db/encryption/keys.txt
-chmod 600 db/encryption/keys.txt
+chmod 644 db/encryption/keys.txt
 
 cat > db/conf.d/encryption.cnf <<'CNF'
 [mariadb]
