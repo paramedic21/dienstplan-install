@@ -1,0 +1,78 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: dienstplan-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+
+  frontend:
+    image: ghcr.io/paramedic21/dienstplanv3/frontend:latest
+    container_name: dienstplan-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    image: ghcr.io/paramedic21/dienstplanv3/backend:latest
+    container_name: dienstplan-backend
+    restart: unless-stopped
+    expose:
+      - "4000"
+    env_file: .env
+    volumes:
+      - upload_data:/data/uploads
+      - system_backup_data:/data/system-backups
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/dienstplan:/opt/dienstplan:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  db:
+    image: mariadb:10.11
+    container_name: dienstplan-db
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/encryption:/etc/mysql/encryption:ro
+      - ./db/conf.d:/etc/mysql/conf.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default:
+    name: dienstplan-network
+
+volumes:
+  db_data:
+  upload_data:
+  system_backup_data:
+  caddy-data:
+  caddy-config:
