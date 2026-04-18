@@ -1,0 +1,8 @@
+[Unit]
+Description=Dienstplan Update Trigger
+
+[Path]
+PathExists=/opt/dienstplan/.update-requested
+
+[Install]
+WantedBy=multi-user.target

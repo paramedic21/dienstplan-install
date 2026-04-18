@@ -1,0 +1,10 @@
+[Unit]
+Description=Dienstplan Auto-Update
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/dienstplan
+ExecStart=/opt/dienstplan/update.sh --no-backup
+ExecStartPost=/bin/rm -f /opt/dienstplan/.update-requested
+StandardOutput=journal
+StandardError=journal
