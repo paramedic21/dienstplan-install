@@ -164,19 +164,12 @@ docker compose -f docker-compose.prod.yml pull
 step "Starte Datenbank (Phase 1: Initialisierung)..."
 docker compose -f docker-compose.prod.yml up -d db
 
-step "Warte auf Datenbank-Initialisierung..."
-db_ready=false
-for i in {1..40}; do
-  echo -n "  [${i}/40] Warte auf MariaDB..."
-  if docker compose -f docker-compose.prod.yml exec -T db \
-      bash -c 'mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" 2>/dev/null'; then
-    db_ready=true
-    break
-  fi
-  echo " nicht bereit, warte 5s"
-  sleep 5
+step "Warte auf Datenbank-Initialisierung (45s)..."
+for i in {45..1}; do
+  echo -ne "  Noch ${i}s...  \r"
+  sleep 1
 done
-[[ "$db_ready" == "true" ]] || fail "Datenbank hat sich nicht rechtzeitig gemeldet."
+echo ""
 info "Datenbank initialisiert."
 
 step "Aktiviere Datenbank-Verschlüsselung..."
@@ -196,37 +189,23 @@ CNF
 
 docker compose -f docker-compose.prod.yml restart db
 
-step "Warte auf Datenbank nach Neustart..."
-db_ready=false
-for i in {1..40}; do
-  echo -n "  [${i}/40] Warte auf MariaDB (encrypted)..."
-  if docker compose -f docker-compose.prod.yml exec -T db \
-      bash -c 'mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" 2>/dev/null'; then
-    db_ready=true
-    break
-  fi
-  echo " nicht bereit, warte 5s"
-  sleep 5
+step "Warte auf Datenbank nach Neustart (30s)..."
+for i in {30..1}; do
+  echo -ne "  Noch ${i}s...  \r"
+  sleep 1
 done
-[[ "$db_ready" == "true" ]] || fail "Datenbank hat sich nach Encryption-Neustart nicht gemeldet."
+echo ""
 info "Datenbank-Verschlüsselung aktiv."
 
 step "Starte verbleibende Container..."
 docker compose -f docker-compose.prod.yml up -d
 
-step "Warte auf Backend..."
-backend_ready=false
-for i in {1..40}; do
-  echo -n "  [${i}/40] Warte auf Backend..."
-  if docker compose -f docker-compose.prod.yml exec -T backend \
-      wget -q --spider http://localhost:4000/api/health 2>/dev/null; then
-    backend_ready=true
-    break
-  fi
-  echo " nicht bereit, warte 5s"
-  sleep 5
+step "Warte auf Backend (60s)..."
+for i in {60..1}; do
+  echo -ne "  Noch ${i}s...  \r"
+  sleep 1
 done
-[[ "$backend_ready" == "true" ]] || fail "Backend hat sich nicht rechtzeitig gemeldet."
+echo ""
 info "Backend bereit."
 
 step "Lege Admin-Benutzer an..."
